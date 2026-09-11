@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: congress
+    schema: main
+    tables:
+      - name: raw_trades
+        description: Raw Bargo Congress Trades rows loaded into DuckDB by ingest.py.
+        columns:
+          - name: trade_id
+            tests:
+              - not_null
+              - unique
+          - name: member
+            tests:
+              - not_null
+          - name: ticker
+            tests:
+              - not_null
+          - name: transaction_date
+            tests:
+              - not_null

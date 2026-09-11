@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_trades
+    description: Cleaned Bargo congressional trade rows from the raw DuckDB table.
+    columns:
+      - name: trade_id
+        tests:
+          - not_null
+          - unique
+      - name: member_name
+        tests:
+          - not_null
+      - name: ticker
+        tests:
+          - not_null
+      - name: transaction_type
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["purchase", "sale", "exchange"]
+      - name: transaction_date
+        tests:
+          - not_null
+      - name: disclosure_date
+        tests:
+          - not_null

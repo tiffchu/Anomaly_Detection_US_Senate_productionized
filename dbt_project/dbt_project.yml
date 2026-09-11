@@ -1,0 +1,14 @@
+name: senate_trades
+version: "0.1.0"
+config-version: 2
+
+profile: senate_trades
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+models:
+  senate_trades:
+    staging:
+      +materialized: view

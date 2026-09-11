@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "senate-trades-anomaly-pipeline"
+version = "0.1.0"
+description = "Production pipeline template for US congressional trading anomaly detection."
+requires-python = ">=3.11"
+dependencies = [
+  "duckdb>=1.0.0",
+  "fastapi>=0.115.0",
+  "mlflow>=2.15.0",
+  "pandas>=2.2.0",
+  "pydantic>=2.7.0",
+  "pydantic-settings>=2.3.0",
+  "python-dateutil>=2.9.0",
+  "requests>=2.32.0",
+  "scikit-learn>=1.5.0",
+  "typer>=0.12.0",
+  "uvicorn[standard]>=0.30.0",
+]
+
+[project.optional-dependencies]
+airflow = [
+  "apache-airflow>=2.9.0",
+]
+bigquery = [
+  "google-cloud-bigquery>=3.25.0",
+  "pandas-gbq>=0.23.0",
+]
+dbt = [
+  "dbt-core>=1.8.0",
+  "dbt-duckdb>=1.8.0",
+  "dbt-bigquery>=1.8.0",
+]
+dev = [
+  "pytest>=8.2.0",
+  "ruff>=0.5.0",
+]
+
+[project.scripts]
+senate-trades = "ingestion.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api*", "ingestion*", "ml*", "storage*"]
+
+[tool.setuptools]
+py-modules = ["config"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
