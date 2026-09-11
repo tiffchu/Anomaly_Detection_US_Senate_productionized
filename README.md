@@ -153,6 +153,4 @@ Recommended first dashboard:
 
 Bargo's free Congress Trades API currently exposes recent disclosed STOCK Act trades via REST, including fields such as member, chamber, ticker, transaction type, amount range, transaction date, disclosure date, estimated trade price, recent price, and performance percentage. Disclosures can lag transactions, so dashboard language should describe results as "disclosed trades" rather than real-time trades.
 
-## Attribution
-
-When displaying Bargo-derived data publicly, include visible attribution linking to Bargo, per their free API terms.
+built with a lot of help from chatgpt <3
