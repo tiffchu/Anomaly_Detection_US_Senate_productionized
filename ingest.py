@@ -11,6 +11,7 @@ from typing import Any
 import duckdb
 import pandas as pd
 import requests
+from requests import HTTPError
 
 
 DEFAULT_BASE_URL = "https://www.bargo.ai/free-apis/congress/v1"
@@ -85,7 +86,24 @@ def fetch_trades(args: argparse.Namespace) -> tuple[list[dict[str, Any]], list[d
                 api_name = {"from_date": "from", "to_date": "to"}.get(name, name)
                 params[api_name] = value
 
-        payload = fetch_page(base_url, api_key, params)
+        try:
+            payload = fetch_page(base_url, api_key, params)
+        except HTTPError as exc:
+            status_code = exc.response.status_code if exc.response is not None else None
+            if status_code == 429:
+                if all_trades:
+                    print(
+                        f"page={page} status=rate_limited rows=0; "
+                        f"using {len(all_trades)} rows already fetched"
+                    )
+                    break
+                if args.allow_stale_on_rate_limit:
+                    print(
+                        "page=0 status=rate_limited rows=0; "
+                        "preserving existing DuckDB raw_trades data"
+                    )
+                    break
+            raise
         trades = payload.get("trades", [])
         raw_pages.append({"request_params": params, "response": payload})
         all_trades.extend(trades)
@@ -293,6 +311,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-dir", default="data/raw", help="Raw output directory.")
     parser.add_argument("--duckdb-path", default="congress.duckdb", help="DuckDB database path.")
     parser.add_argument("--skip-duckdb", action="store_true", help="Only fetch and save files.")
+    parser.add_argument(
+        "--allow-stale-on-rate-limit",
+        action="store_true",
+        help="If Bargo returns 429 before any rows are fetched, keep existing DuckDB data.",
+    )
     return parser.parse_args()
 
 

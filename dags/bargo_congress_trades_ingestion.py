@@ -12,7 +12,7 @@ DUCKDB_PATH = f"{PROJECT_HOME}/data/congress.duckdb"
 
 with DAG(
     dag_id="bargo_congress_trades_ingestion",
-    description="Pull Bargo Congress trades into DuckDB, then build dbt staging models.",
+    description="Pull Bargo Congress trades, build dbt models, then score anomalies.",
     start_date=datetime(2026, 1, 1),
     schedule="@daily",
     catchup=False,
@@ -31,6 +31,7 @@ with DAG(
             "--limit 100 "
             "--pages 10 "
             "--output-dir data/raw "
+            "--allow-stale-on-rate-limit "
             f"--duckdb-path {DUCKDB_PATH}"
         ),
         env={
@@ -51,4 +52,15 @@ with DAG(
         append_env=True,
     )
 
-    ingest_bargo_trades >> run_dbt
+    score_anomalies = BashOperator(
+        task_id="score_anomalies",
+        cwd=PROJECT_HOME,
+        bash_command=f"python -m ml.score_trades --duckdb-path {DUCKDB_PATH}",
+        env={
+            "PYTHONPATH": PROJECT_HOME,
+            "DUCKDB_PATH": DUCKDB_PATH,
+        },
+        append_env=True,
+    )
+
+    ingest_bargo_trades >> run_dbt >> score_anomalies

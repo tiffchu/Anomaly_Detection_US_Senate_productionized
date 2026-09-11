@@ -12,3 +12,5 @@ models:
   senate_trades:
     staging:
       +materialized: view
+    marts:
+      +materialized: table

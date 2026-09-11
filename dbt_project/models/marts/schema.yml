@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: mart_trade_features
+    description: Bargo-native model feature table for scheduled anomaly scoring.
+    columns:
+      - name: trade_id
+        tests:
+          - not_null
+          - unique
+      - name: member_name
+        tests:
+          - not_null
+      - name: ticker
+        tests:
+          - not_null
+      - name: transaction_type
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["purchase", "sale", "exchange"]
+      - name: amount_high
+        tests:
+          - not_null
+      - name: disclosure_lag_days
+        tests:
+          - not_null
