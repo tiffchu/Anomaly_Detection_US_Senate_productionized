@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.operators.bash import BashOperator
+from airflow.providers.standard.operators.bash import BashOperator
 
 
 PROJECT_HOME = "/usr/local/airflow"
@@ -28,8 +28,6 @@ with DAG(
         cwd=PROJECT_HOME,
         bash_command=(
             "python ingest.py "
-            "--from-date {{ macros.ds_add(ds, -7) }} "
-            "--to-date {{ ds }} "
             "--limit 100 "
             "--pages 10 "
             "--output-dir data/raw "

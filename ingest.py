@@ -135,8 +135,38 @@ def save_outputs(
     return trades_json_path, timestamped_raw_path, csv_path
 
 
+def ensure_raw_trades_table(con: duckdb.DuckDBPyConnection) -> None:
+    con.sql(
+        """
+        create table if not exists raw_trades (
+            trade_id varchar primary key,
+            member varchar,
+            member_slug varchar,
+            chamber varchar,
+            state varchar,
+            ticker varchar,
+            asset varchar,
+            type varchar,
+            amount_low bigint,
+            amount_high bigint,
+            amount_range varchar,
+            transaction_date date,
+            disclosure_date date,
+            est_price double,
+            recent_price double,
+            recent_price_date date,
+            perf_pct double,
+            realized_return_pct json,
+            outcome varchar,
+            filing_portal varchar
+        )
+        """
+    )
+
+
 def load_duckdb(json_path: Path, duckdb_path: Path) -> None:
     duckdb_path.parent.mkdir(parents=True, exist_ok=True)
+    records = json.loads(json_path.read_text(encoding="utf-8"))
     con = duckdb.connect(str(duckdb_path))
     try:
         raw_table_exists = con.sql(
@@ -161,67 +191,46 @@ def load_duckdb(json_path: Path, duckdb_path: Path) -> None:
                 con.sql("drop view if exists stg_trades")
                 con.sql("drop table raw_trades")
 
+        ensure_raw_trades_table(con)
+
         con.sql("drop table if exists raw_trades_stage")
-        con.sql(
-            f"""
-            create table raw_trades_stage as
-            select *
-            from read_json_auto('{json_path.as_posix()}')
-            """
-        )
-        con.sql(
-            """
-            create table if not exists raw_trades (
-                trade_id varchar primary key,
-                member varchar,
-                member_slug varchar,
-                chamber varchar,
-                state varchar,
-                ticker varchar,
-                asset varchar,
-                type varchar,
-                amount_low bigint,
-                amount_high bigint,
-                amount_range varchar,
-                transaction_date date,
-                disclosure_date date,
-                est_price double,
-                recent_price double,
-                recent_price_date date,
-                perf_pct double,
-                realized_return_pct json,
-                outcome varchar,
-                filing_portal varchar
+        if records:
+            con.sql(
+                f"""
+                create table raw_trades_stage as
+                select *
+                from read_json_auto('{json_path.as_posix()}')
+                """
             )
-            """
-        )
-        con.sql(
-            """
-            insert or replace into raw_trades by name
-            select
-                trade_id,
-                member,
-                member_slug,
-                chamber,
-                state,
-                ticker,
-                asset,
-                type,
-                amount_low,
-                amount_high,
-                amount_range,
-                transaction_date,
-                disclosure_date,
-                est_price,
-                recent_price,
-                recent_price_date,
-                perf_pct,
-                realized_return_pct,
-                outcome,
-                filing_portal
-            from raw_trades_stage
-            """
-        )
+            con.sql(
+                """
+                insert or replace into raw_trades by name
+                select
+                    trade_id,
+                    member,
+                    member_slug,
+                    chamber,
+                    state,
+                    ticker,
+                    asset,
+                    type,
+                    amount_low,
+                    amount_high,
+                    amount_range,
+                    transaction_date,
+                    disclosure_date,
+                    est_price,
+                    recent_price,
+                    recent_price_date,
+                    perf_pct,
+                    realized_return_pct,
+                    outcome,
+                    filing_portal
+                from raw_trades_stage
+                """
+            )
+        else:
+            print("No trades returned; raw_trades table shape is preserved.")
 
         print("\nDuckDB exploration")
         print("------------------")
