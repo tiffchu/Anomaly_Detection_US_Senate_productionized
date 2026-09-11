@@ -3,7 +3,7 @@ senate_trades:
   outputs:
     duckdb:
       type: duckdb
-      path: ../congress.duckdb
+      path: "{{ env_var('DBT_DUCKDB_PATH', '../congress.duckdb') }}"
       threads: 4
     bigquery:
       type: bigquery

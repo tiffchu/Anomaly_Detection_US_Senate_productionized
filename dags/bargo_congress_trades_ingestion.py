@@ -2,54 +2,55 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from airflow.decorators import dag, task
+from airflow import DAG
+from airflow.operators.bash import BashOperator
 
 
-@dag(
+PROJECT_HOME = "/usr/local/airflow"
+DUCKDB_PATH = f"{PROJECT_HOME}/data/congress.duckdb"
+
+
+with DAG(
     dag_id="bargo_congress_trades_ingestion",
+    description="Pull Bargo Congress trades into DuckDB, then build dbt staging models.",
     start_date=datetime(2026, 1, 1),
     schedule="@daily",
     catchup=False,
     default_args={
         "owner": "data-eng",
-        "retries": 3,
-        "retry_delay": timedelta(minutes=10),
+        "retries": 2,
+        "retry_delay": timedelta(minutes=5),
     },
-    tags=["bargo", "congress", "trades"],
-)
-def bargo_congress_trades_ingestion() -> None:
-    @task
-    def ingest_latest_trades() -> str:
-        from datetime import date, timedelta
+    tags=["bargo", "duckdb", "dbt"],
+) as dag:
+    ingest_bargo_trades = BashOperator(
+        task_id="ingest_bargo_trades",
+        cwd=PROJECT_HOME,
+        bash_command=(
+            "python ingest.py "
+            "--from-date {{ macros.ds_add(ds, -7) }} "
+            "--to-date {{ ds }} "
+            "--limit 100 "
+            "--pages 10 "
+            "--output-dir data/raw "
+            f"--duckdb-path {DUCKDB_PATH}"
+        ),
+        env={
+            "PYTHONPATH": PROJECT_HOME,
+            "DUCKDB_PATH": DUCKDB_PATH,
+            "DBT_DUCKDB_PATH": DUCKDB_PATH,
+        },
+        append_env=True,
+    )
 
-        from config import get_settings
-        from ingestion.bargo_client import BargoCongressTradesClient, BargoQuery
-        from storage.duckdb_store import DuckDBStore
+    run_dbt = BashOperator(
+        task_id="run_dbt",
+        cwd=f"{PROJECT_HOME}/dbt_project",
+        bash_command="dbt build --profiles-dir .",
+        env={
+            "DBT_DUCKDB_PATH": DUCKDB_PATH,
+        },
+        append_env=True,
+    )
 
-        settings = get_settings()
-        client = BargoCongressTradesClient(settings.bargo_base_url, settings.bargo_api_key)
-
-        # Pull a disclosure window larger than one day because STOCK Act filings lag trades.
-        to_date = date.today()
-        from_date = to_date - timedelta(days=7)
-        query = BargoQuery(
-            from_date=from_date.isoformat(),
-            to_date=to_date.isoformat(),
-            limit=settings.bargo_page_limit,
-        )
-
-        trades = list(client.iter_trades(query))
-        store = DuckDBStore(settings.duckdb_path)
-        run_id = store.start_ingestion_run(source="bargo_congress_trades", query=query.to_params(page=0))
-        try:
-            store.upsert_raw_trades(trades, run_id=run_id)
-            store.finish_ingestion_run(run_id=run_id, row_count=len(trades))
-        except Exception:
-            store.finish_ingestion_run(run_id=run_id, row_count=0, status="failed")
-            raise
-        return run_id
-
-    ingest_latest_trades()
-
-
-bargo_congress_trades_ingestion()
+    ingest_bargo_trades >> run_dbt

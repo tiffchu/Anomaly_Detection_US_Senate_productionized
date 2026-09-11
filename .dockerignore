@@ -1,0 +1,10 @@
+.git
+.env
+venv
+__pycache__
+*.pyc
+data
+*.duckdb
+dbt_project/target
+dbt_project/logs
+mlruns

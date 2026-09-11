@@ -1,0 +1,7 @@
+# Local-only Airflow settings for Astro CLI.
+#
+# Keep BARGO_API_KEY in .env or Airflow Variables/Connections, not in this file.
+airflow:
+  connections: []
+  pools: []
+  variables: []

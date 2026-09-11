@@ -42,6 +42,8 @@ dags/                    Airflow DAGs
 ml/                      Training and scoring code
 api/                     FastAPI app
 storage/                 Warehouse adapters
+Dockerfile               Astro Runtime image for local Airflow
+airflow_settings.yaml    Local-only Astro/Airflow settings
 docker/                  Dockerfiles for API and Airflow
 tests/                   Unit tests
 .github/workflows/       CI checks
@@ -51,6 +53,7 @@ tests/                   Unit tests
 
 - Python 3.11+
 - Docker Desktop
+- Astro CLI for local Airflow development
 - A Bargo API key for higher limits and MCP access
 - Optional: Google Cloud project, BigQuery dataset, and service account JSON
 - Optional: Tableau or Power BI Desktop for dashboarding
@@ -82,6 +85,8 @@ python ingest.py --limit 10 --pages 2
 
 This writes `data/raw/trades.json`, a timestamped raw response envelope, a CSV extract, and `congress.duckdb`. The script also creates a `raw_trades` table with DuckDB's `read_json_auto` and prints basic SQL checks for row counts, nulls, duplicate candidates, transaction types, and inferred column types.
 
+The ingest is idempotent: it computes a stable `trade_id`, stages each pull, then `insert or replace`s into DuckDB using `trade_id` as the primary key. Re-running the same pull refreshes rows instead of duplicating them.
+
 Run dbt:
 
 ```powershell
@@ -90,6 +95,28 @@ dbt debug --profiles-dir .
 dbt run --profiles-dir .
 dbt test --profiles-dir .
 ```
+
+Or run the model plus tests together:
+
+```powershell
+dbt build --profiles-dir .
+```
+
+Run Airflow locally with Astro:
+
+```powershell
+astro dev init
+astro dev start
+```
+
+This repo already includes the files Astro expects (`Dockerfile`, `dags/`, `requirements.txt`, `packages.txt`, and `airflow_settings.yaml`). If `astro dev init` says the folder is not empty, skip it and run `astro dev start` from the repo root.
+
+The daily DAG is `bargo_congress_trades_ingestion`:
+
+1. `ingest_bargo_trades` calls `python ingest.py` for the scheduled date window.
+2. `run_dbt` runs `dbt build --profiles-dir .`.
+
+For Astro, keep `BARGO_API_KEY` in the root `.env` file. The DAG writes to `/usr/local/airflow/data/congress.duckdb` inside the container and sets `DBT_DUCKDB_PATH` so dbt reads the same file.
 
 Start the API locally:
 
