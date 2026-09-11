@@ -2,5 +2,3 @@ requests>=2.32.0
 pandas>=2.2.0
 duckdb>=1.0.0
 dbt-duckdb>=1.8.0
-
-astro-run-dag # This package is needed for the astro run command. It will be removed before a deploy
