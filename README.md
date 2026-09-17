@@ -174,6 +174,11 @@ The GitHub Actions workflow runs Python linting and a full `dbt build` for every
 request. It creates a temporary DuckDB database from the committed fixture in
 `tests/fixtures/raw_trades.json`, so CI never calls Bargo and does not require API secrets.
 
+After a pull request is merged into `main`, a separate workflow builds
+`docker/api.Dockerfile` and publishes the FastAPI image to GHCR as both `latest` and an
+immutable commit-SHA tag. It authenticates with the repository's built-in `GITHUB_TOKEN`;
+no Docker Hub credentials or additional GitHub secrets are needed.
+
 Run the same checks locally from the repository root:
 
 ```powershell
