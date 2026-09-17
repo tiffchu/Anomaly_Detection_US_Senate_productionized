@@ -15,7 +15,6 @@ import pandas as pd
 
 from ml.anomaly_model import BargoAnomalyPythonModel, FittedAnomalyModel
 
-
 MODEL_VERSION = "bargo_native_cluster_pca_v2"
 DEFAULT_EXPERIMENT_NAME = "senate-trade-anomaly-detection"
 NUMERIC_COLUMNS = [

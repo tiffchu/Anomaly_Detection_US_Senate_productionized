@@ -35,7 +35,12 @@ class BargoQuery:
 
 
 class BargoCongressTradesClient:
-    def __init__(self, base_url: str, api_key: str | None = None, timeout_seconds: int = 30) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str | None = None,
+        timeout_seconds: int = 30,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.session = requests.Session()
@@ -51,7 +56,11 @@ class BargoCongressTradesClient:
         response.raise_for_status()
         return response.json()
 
-    def iter_trades(self, query: BargoQuery, max_pages: int | None = None) -> Iterator[dict[str, Any]]:
+    def iter_trades(
+        self,
+        query: BargoQuery,
+        max_pages: int | None = None,
+    ) -> Iterator[dict[str, Any]]:
         page = 0
         while True:
             payload = self.get_trades_page(query, page=page)
@@ -59,8 +68,7 @@ class BargoCongressTradesClient:
             if not trades:
                 break
 
-            for trade in trades:
-                yield trade
+            yield from trades
 
             count = int(payload.get("count", len(trades)))
             limit = int(payload.get("limit", query.limit))

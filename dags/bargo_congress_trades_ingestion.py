@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.providers.standard.operators.bash import BashOperator
 
-
 PROJECT_HOME = "/usr/local/airflow"
 DATA_HOME = f"{PROJECT_HOME}/include/data"
 DUCKDB_PATH = f"{DATA_HOME}/congress.duckdb"

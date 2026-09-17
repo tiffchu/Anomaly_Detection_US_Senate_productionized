@@ -6,7 +6,6 @@ import os
 import mlflow
 from mlflow import MlflowClient
 
-
 DEFAULT_MODEL_NAME = "congress-trade-anomaly-detector"
 
 

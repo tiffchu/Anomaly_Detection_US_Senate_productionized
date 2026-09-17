@@ -2,37 +2,56 @@ name: CI
 
 on:
   pull_request:
-  push:
-    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
-  python:
+  lint:
+    name: Python lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install
-        run: |
-          python -m pip install -U pip
-          python -m pip install -e ".[dev]"
-      - name: Lint
-        run: ruff check .
-      - name: Test
-        run: pytest
+      - name: Check out repository
+        uses: actions/checkout@v6
 
-  dbt-parse:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install dbt
-        run: |
-          python -m pip install -U pip
-          python -m pip install ".[dbt]"
-      - name: Parse dbt project
-        working-directory: dbt_project
-        run: dbt parse --profiles-dir .
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+
+      - name: Install lint dependencies
+        run: python -m pip install --requirement requirements-ci.txt
+
+      - name: Run Ruff
+        run: ruff check --output-format=github .
+
+  dbt:
+    name: dbt build and tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
+
+      - name: Install dbt dependencies
+        run: python -m pip install --requirement requirements-ci.txt
+
+      - name: Create fixture database
+        run: python tests/create_ci_database.py --database "${{ runner.temp }}/ci.duckdb"
+
+      - name: Build and test dbt models
+        env:
+          DBT_DUCKDB_PATH: ${{ runner.temp }}/ci.duckdb
+        run: dbt build --project-dir dbt_project --profiles-dir dbt_project

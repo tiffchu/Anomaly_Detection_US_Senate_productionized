@@ -13,7 +13,10 @@ app = typer.Typer(help="Pipeline utilities for Senate trades anomaly detection."
 
 @app.command("ingest-bargo")
 def ingest_bargo(
-    from_date: date | None = typer.Option(None, help="Inclusive transaction/disclosure start date."),
+    from_date: date | None = typer.Option(
+        None,
+        help="Inclusive transaction/disclosure start date.",
+    ),
     to_date: date | None = typer.Option(None, help="Inclusive transaction/disclosure end date."),
     ticker: str | None = typer.Option(None, help="Optional ticker filter."),
     member: str | None = typer.Option(None, help="Optional member substring filter."),
@@ -35,7 +38,10 @@ def ingest_bargo(
     trades = list(client.iter_trades(query, max_pages=max_pages))
 
     store = DuckDBStore(settings.duckdb_path)
-    run_id = store.start_ingestion_run(source="bargo_congress_trades", query=query.to_params(page=0))
+    run_id = store.start_ingestion_run(
+        source="bargo_congress_trades",
+        query=query.to_params(page=0),
+    )
     store.upsert_raw_trades(trades, run_id=run_id)
     store.finish_ingestion_run(run_id=run_id, row_count=len(trades))
 

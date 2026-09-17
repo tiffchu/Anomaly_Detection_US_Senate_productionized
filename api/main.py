@@ -9,7 +9,6 @@ import pandas as pd
 from fastapi import FastAPI, Request
 from pydantic import BaseModel, ConfigDict
 
-
 DEFAULT_TRACKING_URI = "sqlite:////usr/local/airflow/include/data/mlflow.db"
 DEFAULT_MODEL_NAME = "congress-trade-anomaly-detector"
 DEFAULT_MODEL_ALIAS = "production"

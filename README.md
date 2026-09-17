@@ -168,6 +168,22 @@ The response includes the anomaly score and flag plus the registry model version
 run ID used for inference. Changing the registry's `production` alias takes effect the next
 time the API starts.
 
+## Pull Request CI
+
+The GitHub Actions workflow runs Python linting and a full `dbt build` for every pull
+request. It creates a temporary DuckDB database from the committed fixture in
+`tests/fixtures/raw_trades.json`, so CI never calls Bargo and does not require API secrets.
+
+Run the same checks locally from the repository root:
+
+```powershell
+python -m pip install -r requirements-ci.txt
+ruff check .
+python tests/create_ci_database.py --database .tmp/ci.duckdb
+$env:DBT_DUCKDB_PATH = (Resolve-Path .tmp/ci.duckdb)
+dbt build --project-dir dbt_project --profiles-dir dbt_project
+```
+
 ## Dashboard Direction
 
 For this project, start with Tableau Public or Power BI connected to the mart table/export `mart_flagged_trades`.

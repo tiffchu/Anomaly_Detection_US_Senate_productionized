@@ -13,7 +13,6 @@ import pandas as pd
 import requests
 from requests import HTTPError
 
-
 DEFAULT_BASE_URL = "https://www.bargo.ai/free-apis/congress/v1"
 TRADE_ID_FIELDS = (
     "member",
@@ -259,10 +258,15 @@ def load_duckdb(json_path: Path, duckdb_path: Path) -> None:
                 select
                     count(*) as rows,
                     count(distinct trade_id) as distinct_trade_ids,
-                    count(distinct member || '|' || ticker || '|' || transaction_date || '|' || type || '|' || amount_range) as approx_distinct_rows,
+                    count(distinct
+                        member || '|' || ticker || '|' || transaction_date ||
+                        '|' || type || '|' || amount_range
+                    ) as approx_distinct_rows,
                     sum(case when ticker is null then 1 else 0 end) as null_ticker_rows,
-                    sum(case when transaction_date is null then 1 else 0 end) as null_transaction_date_rows,
-                    sum(case when disclosure_date is null then 1 else 0 end) as null_disclosure_date_rows
+                    sum(case when transaction_date is null then 1 else 0 end)
+                        as null_transaction_date_rows,
+                    sum(case when disclosure_date is null then 1 else 0 end)
+                        as null_disclosure_date_rows
                 from raw_trades
                 """
             )
