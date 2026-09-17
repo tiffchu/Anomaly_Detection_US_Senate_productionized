@@ -115,8 +115,24 @@ The daily DAG is `bargo_congress_trades_ingestion`:
 
 1. `ingest_bargo_trades` calls `python ingest.py` for the scheduled date window.
 2. `run_dbt` runs `dbt build --profiles-dir .`.
+3. `score_anomalies` trains the clustering/PCA anomaly model, logs its parameters,
+   metrics, and serialized fitted state to MLflow, then writes scores to DuckDB.
 
-For Astro, keep `BARGO_API_KEY` in the root `.env` file. The DAG writes to `/usr/local/airflow/data/congress.duckdb` inside the container and sets `DBT_DUCKDB_PATH` so dbt reads the same file.
+For Astro, keep `BARGO_API_KEY` in the root `.env` file. The DAG writes to
+`/usr/local/airflow/include/data/congress.duckdb`; Astro mounts `include`, so the database
+and MLflow history survive container rebuilds. The DAG sets `DBT_DUCKDB_PATH` so dbt reads
+the same file.
+
+MLflow run metadata is stored in `include/data/mlflow.db` and artifacts in
+`include/data/mlartifacts`, so no hosted MLflow server or additional secret is required for
+local development. To inspect the runs outside Airflow:
+
+```powershell
+mlflow ui --backend-store-uri sqlite:///include/data/mlflow.db --port 5000
+```
+
+Then open `http://localhost:5000`. For a remote tracking server later, set
+`MLFLOW_TRACKING_URI` and any credentials required by that server.
 
 Start the API locally:
 

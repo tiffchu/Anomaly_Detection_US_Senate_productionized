@@ -9,6 +9,7 @@ __pycache__/
 .mypy_cache/
 .env
 data/
+include/data/
 logs/
 mlruns/
 airflow/logs/

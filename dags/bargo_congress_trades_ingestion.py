@@ -7,7 +7,10 @@ from airflow.providers.standard.operators.bash import BashOperator
 
 
 PROJECT_HOME = "/usr/local/airflow"
-DUCKDB_PATH = f"{PROJECT_HOME}/data/congress.duckdb"
+DATA_HOME = f"{PROJECT_HOME}/include/data"
+DUCKDB_PATH = f"{DATA_HOME}/congress.duckdb"
+MLFLOW_TRACKING_URI = f"sqlite:///{DATA_HOME}/mlflow.db"
+MLFLOW_ARTIFACT_ROOT = f"file://{DATA_HOME}/mlartifacts"
 
 
 with DAG(
@@ -30,7 +33,7 @@ with DAG(
             "python ingest.py "
             "--limit 100 "
             "--pages 10 "
-            "--output-dir data/raw "
+            f"--output-dir {DATA_HOME}/raw "
             "--allow-stale-on-rate-limit "
             f"--duckdb-path {DUCKDB_PATH}"
         ),
@@ -55,10 +58,19 @@ with DAG(
     score_anomalies = BashOperator(
         task_id="score_anomalies",
         cwd=PROJECT_HOME,
-        bash_command=f"python -m ml.score_trades --duckdb-path {DUCKDB_PATH}",
+        bash_command=(
+            "python -m ml.score_trades "
+            f"--duckdb-path {DUCKDB_PATH} "
+            f"--tracking-uri {MLFLOW_TRACKING_URI} "
+            f"--artifact-root {MLFLOW_ARTIFACT_ROOT}"
+        ),
         env={
             "PYTHONPATH": PROJECT_HOME,
             "DUCKDB_PATH": DUCKDB_PATH,
+            "MLFLOW_TRACKING_URI": MLFLOW_TRACKING_URI,
+            "MLFLOW_ARTIFACT_ROOT": MLFLOW_ARTIFACT_ROOT,
+            "MLFLOW_EXPERIMENT_NAME": "senate-trade-anomaly-detection",
+            "GIT_PYTHON_REFRESH": "quiet",
         },
         append_env=True,
     )
