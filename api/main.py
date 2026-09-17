@@ -58,9 +58,8 @@ async def lifespan(app: FastAPI):
     mlflow.set_registry_uri(registry_uri)
     client = mlflow.MlflowClient()
     model_version = client.get_model_version_by_alias(model_name, model_alias)
-    model_uri = f"models:/{model_name}@{model_alias}"
 
-    app.state.model = mlflow.pyfunc.load_model(model_uri)
+    app.state.model = mlflow.pyfunc.load_model(model_version.source)
     app.state.model_name = model_name
     app.state.model_alias = model_alias
     app.state.model_version = int(model_version.version)

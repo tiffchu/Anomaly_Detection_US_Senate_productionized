@@ -148,10 +148,14 @@ The command creates a version of `congress-trade-anomaly-detector`, assigns the 
 Start the production-model API:
 
 ```powershell
-docker compose up --build api
+docker compose up --build -d
 ```
 
-The API loads `congress-trade-anomaly-detector@production` from MLflow once during startup.
+Compose starts the MLflow tracking/registry server on `http://localhost:5000` and the API on
+`http://localhost:8000`. The API waits for MLflow to become healthy, then loads
+`congress-trade-anomaly-detector@production` once during startup. Airflow remains managed by
+Astro and is intentionally not duplicated in this Compose stack.
+
 Score one Bargo-native feature record:
 
 ```powershell

@@ -1,15 +1,19 @@
 FROM python:3.14-slim
 
 WORKDIR /app
-ENV PYTHONPATH=/app
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
 
-COPY pyproject.toml README.md ./
-COPY config.py ./
-COPY ingestion ./ingestion
-COPY storage ./storage
-COPY ml ./ml
+COPY api/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
+
 COPY api ./api
-RUN pip install --no-cache-dir -U pip && pip install --no-cache-dir .
+COPY ml ./ml
+
+RUN useradd --create-home --uid 50000 appuser
+USER appuser
 
 EXPOSE 8000
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
