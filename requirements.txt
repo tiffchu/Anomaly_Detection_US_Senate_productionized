@@ -4,3 +4,5 @@ numpy>=1.26.0
 duckdb>=1.0.0
 dbt-duckdb>=1.8.0
 mlflow>=2.15.0,<4
+fastapi>=0.115.0
+uvicorn>=0.30.0

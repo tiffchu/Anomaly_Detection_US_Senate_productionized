@@ -145,17 +145,24 @@ python -m ml.promote_model `
 The command creates a version of `congress-trade-anomaly-detector`, assigns the modern
 `production` alias, and also marks the version with MLflow's legacy `Production` stage.
 
-Start the API locally:
+Start the production-model API:
 
 ```powershell
-uvicorn api.main:app --reload
+docker compose up --build api
 ```
 
-Or bring up the local stack:
+The API loads `congress-trade-anomaly-detector@production` from MLflow once during startup.
+Score one Bargo-native feature record:
 
 ```powershell
-docker compose up --build
+curl.exe -X POST http://localhost:8000/score `
+  -H "Content-Type: application/json" `
+  -d '{"amount_low":1001,"amount_high":15000,"disclosure_lag_days":30,"signed_amount_high":15000,"member_avg_amount_high":15000,"member_running_net_amount":15000,"member_trade_count":1,"ticker_trade_count":1,"chamber":"senate","state":"CA","transaction_type":"purchase","outcome":"gain"}'
 ```
+
+The response includes the anomaly score and flag plus the registry model version and source
+run ID used for inference. Changing the registry's `production` alias takes effect the next
+time the API starts.
 
 ## Dashboard Direction
 
