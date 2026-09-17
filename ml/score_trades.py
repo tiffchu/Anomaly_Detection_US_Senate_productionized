@@ -13,7 +13,7 @@ import mlflow
 import numpy as np
 import pandas as pd
 
-from ml.anomaly_model import FittedAnomalyModel
+from ml.anomaly_model import BargoAnomalyPythonModel, FittedAnomalyModel
 
 
 MODEL_VERSION = "bargo_native_cluster_pca_v2"
@@ -245,13 +245,25 @@ def log_mlflow_run(
             metadata = asdict(model)
             for key in ["cluster_centers", "pca_mean", "pca_components"]:
                 metadata[key] = metadata[key].tolist()
-            mlflow.log_dict(metadata, "model/model_metadata.json")
+            mlflow.log_dict(metadata, "model_state/model_metadata.json")
 
             with tempfile.TemporaryDirectory() as temp_dir:
                 model_path = Path(temp_dir) / "anomaly_model.pkl"
                 with model_path.open("wb") as model_file:
                     pickle.dump(model, model_file)
-                mlflow.log_artifact(str(model_path), artifact_path="model")
+                mlflow.log_artifact(str(model_path), artifact_path="model_state")
+
+            model_info = mlflow.pyfunc.log_model(
+                name="model",
+                python_model=BargoAnomalyPythonModel(model),
+                code_paths=["ml"],
+                pip_requirements=[
+                    "mlflow>=3.0,<4",
+                    "numpy>=1.26.0",
+                    "pandas>=2.2.0",
+                ],
+            )
+            mlflow.set_tag("registry_model_uri", model_info.model_uri)
 
         return active_run.info.run_id
 

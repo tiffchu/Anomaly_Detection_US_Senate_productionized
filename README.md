@@ -134,6 +134,17 @@ mlflow ui --backend-store-uri sqlite:///include/data/mlflow.db --port 5000
 Then open `http://localhost:5000`. For a remote tracking server later, set
 `MLFLOW_TRACKING_URI` and any credentials required by that server.
 
+Promote a verified run to the local model registry:
+
+```powershell
+python -m ml.promote_model `
+  --run-id <MLFLOW_RUN_ID> `
+  --tracking-uri sqlite:///include/data/mlflow.db
+```
+
+The command creates a version of `congress-trade-anomaly-detector`, assigns the modern
+`production` alias, and also marks the version with MLflow's legacy `Production` stage.
+
 Start the API locally:
 
 ```powershell
