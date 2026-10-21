@@ -25,7 +25,10 @@ DuckDB raw tables / BigQuery raw dataset
 dbt staging + mart models
     |
     v
-ML training/scoring + MLflow
+Weekly candidate training + MLflow registry
+    |
+    v
+Production alias -> daily scoring
     |
     v
 FastAPI + dashboard extracts
@@ -115,8 +118,13 @@ The daily DAG is `bargo_congress_trades_ingestion`:
 
 1. `ingest_bargo_trades` calls `python ingest.py` for the scheduled date window.
 2. `run_dbt` runs `dbt build --profiles-dir .`.
-3. `score_anomalies` trains the clustering/PCA anomaly model, logs its parameters,
-   metrics, and serialized fitted state to MLflow, then writes scores to DuckDB.
+3. `score_with_production_model` loads `congress-trade-anomaly-detector@production`
+   from MLflow and scores trades that are new or were scored by an older model version.
+
+The weekly DAG is `bargo_anomaly_model_training`. It trains the clustering/PCA model on
+the latest feature mart and logs a candidate run to MLflow every Sunday at 04:00. Training
+does not change the production alias. Review the run first, then promote it explicitly with
+`ml.promote_model`. This keeps scheduled inference stable and makes promotion auditable.
 
 For Astro, keep `BARGO_API_KEY` in the root `.env` file. The DAG writes to
 `/usr/local/airflow/include/data/congress.duckdb`; Astro mounts `include`, so the database
@@ -144,6 +152,24 @@ python -m ml.promote_model `
 
 The command creates a version of `congress-trade-anomaly-detector`, assigns the modern
 `production` alias, and also marks the version with MLflow's legacy `Production` stage.
+The next daily scoring run automatically detects the new registry version and rescores the
+current feature mart once. Retries with the same version score only newly arrived trades.
+
+### How unsupervised scores work
+
+There is no labeled "fraud" target. Training robust-scales numeric features with the median
+and interquartile range, one-hot encodes categorical features, and then computes two forms
+of unusualness:
+
+- `cluster_anomaly_score` is the row's Euclidean distance from its assigned cluster center.
+- `reconstruction_error` is the mean squared error after PCA compresses and reconstructs
+  the row.
+
+Each value is normalized by its training-set 95th percentile. The combined score is
+`0.45 * normalized cluster distance + 0.55 * normalized reconstruction error`. A row is
+flagged when it is both in the smallest cluster and above the reconstruction threshold, or
+when its combined score is above the training-set 95th percentile. The score therefore
+means "unusual relative to disclosed trades used for training," not "proven misconduct."
 
 Start the production-model API:
 
@@ -184,6 +210,7 @@ Run the same checks locally from the repository root:
 ```powershell
 python -m pip install -r requirements-ci.txt
 ruff check .
+python -m pytest -q
 python tests/create_ci_database.py --database .tmp/ci.duckdb
 $env:DBT_DUCKDB_PATH = (Resolve-Path .tmp/ci.duckdb)
 dbt build --project-dir dbt_project --profiles-dir dbt_project
@@ -202,11 +229,11 @@ Recommended first dashboard:
 
 ## Suggested Sequence
 
-1. Finish the core path locally: Airflow -> DuckDB -> dbt -> anomaly scoring.
-2. Move raw/staging/mart tables to BigQuery when local semantics are stable.
-3. Add MLflow experiment tracking around the existing autoencoder and clustering code.
-4. Add FastAPI model endpoints and Docker images.
-5. Add dashboard refresh and CI/CD hardening.
+1. Validate model candidates with time-based backtests before promotion.
+2. Port the notebook autoencoder if it outperforms PCA reconstruction.
+3. Move raw/staging/mart tables to BigQuery when local semantics are stable.
+4. Add the dashboard and scheduled refresh.
+5. Deploy the API, MLflow storage, and scheduler to durable hosted infrastructure.
 
 ## Data Notes
 
