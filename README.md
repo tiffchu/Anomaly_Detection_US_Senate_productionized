@@ -4,7 +4,7 @@ Production template for the original notebook project: scheduled congressional-t
 
 ## ML Methods and Research Results
 
-Read the [ML methods and results walkthrough](https://tiffchu.github.io/quarto-anomaly-detection/) for the original research project's motivation, data preparation, model explanations, and visualizations. The walkthrough is maintained in the [Quarto source repository](https://tiffchu.github.io/quarto-anomaly-detection/).
+Read the [ML methods and results walkthrough](https://tiffchu.github.io/quarto-anomaly-detection/) for the original research project's motivation, data preparation, model explanations, and visualizations.
 
 - [Agglomerative clustering](https://tiffchu.github.io/quarto-anomaly-detection/#method-1-agglomerative-clustering): how small or isolated clusters identify unusual trades.
 - [Autoencoder neural network](https://tiffchu.github.io/quarto-anomaly-detection/#method-2-autoencoder-neural-network): how reconstruction error identifies unusual patterns.
