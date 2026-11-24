@@ -2,6 +2,18 @@
 
 Production template for the original notebook project: scheduled congressional-trade ingestion, warehouse layers, dbt transforms, anomaly scoring, MLflow tracking, FastAPI serving, dashboard-ready marts, Docker, and CI.
 
+## ML Methods and Research Results
+
+Read the [ML methods and results walkthrough](https://tiffchu.github.io/quarto542/) for the original research project's motivation, data preparation, model explanations, and visualizations. The walkthrough is maintained in the [Quarto source repository](https://github.com/tiffchu/quarto542).
+
+- [Agglomerative clustering](https://tiffchu.github.io/quarto542/#method-1-agglomerative-clustering): how small or isolated clusters identify unusual trades.
+- [Autoencoder neural network](https://tiffchu.github.io/quarto542/#method-2-autoencoder-neural-network): how reconstruction error identifies unusual patterns.
+- [Model comparison](https://tiffchu.github.io/quarto542/#comparing-the-two-methods) and [interpreting the results](https://tiffchu.github.io/quarto542/#interpreting-the-results).
+
+The walkthrough documents the original agglomerative clustering and neural autoencoder analysis. This repository currently implements K-means clustering and PCA reconstruction for scheduled scoring; see [how unsupervised scores work](#how-unsupervised-scores-work) for the current scoring rules. The walkthrough's figures and findings come from the original analysis, and do not represent live pipeline results.
+
+## Pipeline Overview
+
 The first implementation target is intentionally boring and defensible:
 
 1. Airflow pulls Bargo's Congress Trades REST API on a schedule.
@@ -156,6 +168,8 @@ The next daily scoring run automatically detects the new registry version and re
 current feature mart once. Retries with the same version score only newly arrived trades.
 
 ### How unsupervised scores work
+
+For the original research methods and visual results, see the [ML methods walkthrough](https://tiffchu.github.io/quarto542/#unsupervised-anomaly-detection). The scoring rules below describe this repository's current K-means and PCA implementation in [`ml/model_training.py`](ml/model_training.py) and [`ml/anomaly_model.py`](ml/anomaly_model.py).
 
 There is no labeled "fraud" target. Training robust-scales numeric features with the median
 and interquartile range, one-hot encodes categorical features, and then computes two forms
