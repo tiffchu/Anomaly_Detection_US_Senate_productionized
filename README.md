@@ -1,6 +1,6 @@
 # US Senate Trading Anomaly Pipeline
 
-Production template for the original notebook project: scheduled congressional-trade ingestion, warehouse layers, dbt transforms, anomaly scoring, MLflow tracking, FastAPI serving, dashboard-ready marts, Docker, and CI.
+Production template for the [original notebook project](https://github.com/tiffchu/Anomaly_Detection_US_Senate): scheduled congressional-trade ingestion, warehouse layers, dbt transforms, anomaly scoring, MLflow tracking, FastAPI serving, dashboard-ready marts, Docker, and CI.
 
 ## ML Methods and Research Results
 
